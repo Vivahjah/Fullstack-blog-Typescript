@@ -7,6 +7,7 @@ import helmet from "helmet";
 import limiter from "@/lib/express-rate-limit";
 import type { CorsOptions } from "cors";
 import { connectToDatabase, disconnectFromDatabase } from "./lib/mongoose";
+import { logger } from "@/lib/winston";
 
 import v1Routes from "@/routes/v1";
 
@@ -26,7 +27,7 @@ const corsOptions: CorsOptions = {
         }
         else {
             callback(new Error("Not allowed by CORS"), false);
-            console.log(`CORS error : ${origin} is not allowed by CORS`);
+            logger.warn(`CORS error : ${origin} is not allowed by CORS`);
         }
 
     }
@@ -49,10 +50,10 @@ app.use(compression({ threshold: 1024 })); // Compress responses larger than 1KB
         app.use("/api/v1", v1Routes);
 
         app.listen(config.PORT, () => {
-            console.log(`Server is running on http://localhost:${config.PORT}`);
+            logger.info(`Server is running on http://localhost:${config.PORT}`);
         });
     } catch (error) {
-        console.error("Error starting server:", error);
+        logger.error("Error starting server:", error);
 
         if (process.env.NODE_ENV === "production") {
             process.exit(1);
@@ -64,11 +65,10 @@ app.use(compression({ threshold: 1024 })); // Compress responses larger than 1KB
 const handleServerShutdown = async () => {
     try {
         await disconnectFromDatabase();
-        console.log("Shutting down server...");
+        logger.warn("Shutting down server...");
         process.exit(0);
     } catch (error) {
-        console.error("Error during server shutdown:", error);
-
+        logger.error("Error during server shutdown:", error);
     }
 }
 
