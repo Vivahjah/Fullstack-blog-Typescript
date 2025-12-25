@@ -6,6 +6,7 @@ import compression from "compression";
 import helmet from "helmet";
 import limiter from "@/lib/express-rate-limit";
 import type { CorsOptions } from "cors";
+import { connectToDatabase, disconnectFromDatabase } from "./lib/mongoose";
 
 import v1Routes from "@/routes/v1";
 
@@ -44,6 +45,7 @@ app.use(compression({ threshold: 1024 })); // Compress responses larger than 1KB
 
 (async () => {
     try {
+        await connectToDatabase();
         app.use("/api/v1", v1Routes);
 
         app.listen(config.PORT, () => {
@@ -59,13 +61,14 @@ app.use(compression({ threshold: 1024 })); // Compress responses larger than 1KB
 })();
 
 
-const handleServerShutdown = ( ) => {
+const handleServerShutdown = async () => {
     try {
+        await disconnectFromDatabase();
         console.log("Shutting down server...");
         process.exit(0);
     } catch (error) {
         console.error("Error during server shutdown:", error);
-        
+
     }
 }
 
