@@ -1,22 +1,22 @@
 import { Router } from 'express';
-import { time } from 'node:console';
-import { version } from 'node:os';
+import authRoutes from "@/routes/v1/auth";
+
 
 
 const router = Router();
 
 
-   router.get("/", (req, res) => {
-            res.status(200).json({
-                message: "API is Live",
-                status: "success",
-                version : "1.0.0",
-                docs : "http://api.example.com/docs",
-                time : new Date().toISOString()
-            })
-        });
+router.get("/", (req, res) => {
+    res.status(200).json({
+        message: "API is Live",
+        status: "success",
+        version: "1.0.0",
+        docs: "http://api.example.com/docs",
+        time: new Date().toISOString()
+    })
+});
+
+router.use("/auth", authRoutes);
 
 
-
-
-    export default router;
+export default router;
