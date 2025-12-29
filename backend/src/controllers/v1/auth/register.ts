@@ -5,6 +5,7 @@ import type { IUser } from "@/models/user"
 import config from "@/config"
 import User from "@/models/user"
 import { generateUserName } from "@/utils"
+import Token from "@/models/token"
 import {generateAcessToken, generateRefreshToken} from "@/lib/jwt"
 
 
@@ -15,6 +16,17 @@ type UserData = Pick<IUser,  | "email" | "password" | "role">;
 
 const register = async (req: Request, res : Response) : Promise<void> => {
 const { email, password, role } : UserData = req.body as UserData;
+
+//if role is "admin" but is not on the allowed list, return error
+
+if(role === "admin" && !config.ALLOWED_ADMIN_EMAILS?.includes(email)) {
+    res.status(403).json({
+        code : "FORBIDDEN",
+        message: "You are not allowed to register as admin",
+    });
+    logger.warn(`Forbidden admin registration attempt for email: ${email}`);
+    return;
+}
 // console.log({email, password, role});
     try {
         const username = generateUserName();
@@ -27,6 +39,16 @@ const { email, password, role } : UserData = req.body as UserData;
 
         const accessToken = generateAcessToken(newUser._id);
         const refreshToken = generateRefreshToken(newUser._id);
+
+        //store refresh token in the database
+        await Token.create({
+            userId: newUser._id,
+            token: refreshToken,
+        });
+        logger.info("Refresh token created for user", {
+            userId: newUser._id,
+            refreshToken: refreshToken,
+        })
 
         res.cookie( "refreshToken", refreshToken, {
             httpOnly: true,
