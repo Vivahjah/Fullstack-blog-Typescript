@@ -1,9 +1,11 @@
+
 import {logger} from "@/lib/winston"
 import type {Request, Response} from "express"
 import type { IUser } from "@/models/user"
 import config from "@/config"
 import User from "@/models/user"
 import { generateUserName } from "@/utils"
+import {generateAcessToken, generateRefreshToken} from "@/lib/jwt"
 
 
 
@@ -23,14 +25,26 @@ const { email, password, role } : UserData = req.body as UserData;
             username
         })
 
+        const accessToken = generateAcessToken(newUser._id);
+        const refreshToken = generateRefreshToken(newUser._id);
+
+        res.cookie( "refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: config.NODE_ENV === "production",
+            sameSite: "strict",
+         
+        });
+
         res.status(201).json({ 
             user : {
                 email: newUser.email,
                 username: newUser.username,
-                role: newUser.role,
-               
-            }
+                role: newUser.role, 
+            },
+            accessToken,
+           
         })
+        logger.info("User registered successfully", newUser);
         
     } catch (error) {
         res.status(500).json({
